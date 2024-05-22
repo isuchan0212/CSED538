@@ -1,11 +1,12 @@
 import torch
 
-def train_val(model, device, num_epochs, train_loader,val_loader, criterion, optimizer):
+def train_val(model, device, num_epochs, train_loader,val_loader, criterion, optimizer, scheduler=None):
     torch.multiprocessing.freeze_support()
     model.to(device)
 
     criterion = criterion
     optimizer = optimizer
+    scheduler = scheduler
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -25,9 +26,12 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
             running_loss += loss.item() * inputs.size(0)
 
         epoch_loss = running_loss / len(train_loader.dataset)
-        print(f'Epoch {epoch+1}, Train Loss: {epoch_loss:.2f}')
+        print(f'Epoch {epoch+1}, Train Loss: {epoch_loss}')
 
-         # Validation phase
+        if scheduler is not None:
+            scheduler.step()
+
+        # Validation phase
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():
             val_running_loss = 0.0
@@ -41,8 +45,8 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
                 val_running_loss += loss.item() * inputs.size(0)
 
             val_epoch_loss = val_running_loss / len(val_loader.dataset)
-            print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss:.2f}')
-            
+            print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss}')
+
 
 def test(model, device, test_loader):
 
