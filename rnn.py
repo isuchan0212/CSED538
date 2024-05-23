@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from sklearn.metrics import f1_score
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -30,9 +29,9 @@ def train(model, dataloader, criterion, optimizer, scheduler, epoch):
     model.to(device)
     model.train()
 
-    train_acc = 0
+    train_correct = 0
     train_count = 0
-    log_interval = 30
+    # log_interval = 30
 
     for index, (inputs, labels) in enumerate(dataloader):
         optimizer.zero_grad()
@@ -48,13 +47,13 @@ def train(model, dataloader, criterion, optimizer, scheduler, epoch):
 
         optimizer.step()
 
-        train_acc += (pred == labels).sum().item()
+        train_correct += (pred == labels).sum().item()
         train_count += labels.size(0)
-
-        if index > 0 and index % log_interval == 0:
-            print(f"| epoch {epoch:3d} | {index:5d}/{len(dataloader):5d} batches | accuracy {train_acc / train_count:8.3f}")
+        train_acc = train_correct / train_count
 
     scheduler.step()
+
+    return train_acc
 
 def validate(model, dataloader, HEIGHT, input_dim):
     with torch.no_grad():
@@ -62,9 +61,6 @@ def validate(model, dataloader, HEIGHT, input_dim):
 
         val_count = 0
         val_correct = 0
-
-        val_labels = []
-        val_predicts = []
 
         for index, (inputs, labels) in enumerate(dataloader):
             inputs = inputs.view(-1, HEIGHT, input_dim)
@@ -80,8 +76,3 @@ def validate(model, dataloader, HEIGHT, input_dim):
             val_acc = (val_correct / val_count)
 
     return val_acc
-
-
-
-
-        
