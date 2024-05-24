@@ -87,7 +87,7 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
 
 
     
-    fig1 = plt.figure()
+    fig = plt.figure()
     plt.plot(train_loss_list)
     plt.plot(val_loss_list)
     
@@ -102,7 +102,7 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
             fig.suptitle(f'Loss when using no scheduler')
             plt.savefig(f'figures/Loss_No_Scheduler')
 
-    fig2 = plt.figure()
+    fig = plt.figure()
     plt.plot(train_acc_list)
     plt.plot(val_acc_list)
     plt.plot(test_acc_list)
