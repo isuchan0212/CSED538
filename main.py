@@ -16,6 +16,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--lr_scheduler')
 parser.add_argument('-a', '--adaptive_scheduling',action='store_true')
+parser.add_argument('-e', '--epochs', type=int, default=200)
 
 args = parser.parse_args()
 
@@ -35,7 +36,7 @@ transform = transforms.Compose(
 
 model = MLP()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-num_epochs = 200
+num_epochs = args.epochs
 
 dataset = get_cifar10_dataset(root='./data', train=True, download=False, transform=transform)
 test_set = get_cifar10_dataset(root='./data', train=False, download=False, transform=transform)
@@ -49,7 +50,7 @@ test_loader = DataLoader(test_set, batch_size = 128, shuffle=False, num_workers=
 
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.9) if not args.adaptive_scheduling else optim.Adam(model.parameters(), lr=1e-3, amsgrad=True)
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9) if not args.adaptive_scheduling else optim.Adam(model.parameters(), lr=0.1, amsgrad=True)
 
 schedulers = {
     'step': optim.lr_scheduler.StepLR(optimizer,50),
@@ -58,6 +59,7 @@ schedulers = {
     'cosine': optim.lr_scheduler.CosineAnnealingLR(optimizer,50),
     'cosinewarmup': optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,50,T_mult=2) 
     }
+
 scheduler = schedulers[args.lr_scheduler] if args.lr_scheduler else None
 
 if __name__ == '__main__':

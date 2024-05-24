@@ -1,4 +1,5 @@
 import torch
+import matplotlib.pyplot as plt
 
 def train_val(model, device, num_epochs, train_loader,val_loader, criterion, optimizer, scheduler=None):
     torch.multiprocessing.freeze_support()
@@ -7,6 +8,8 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
     criterion = criterion
     optimizer = optimizer
     scheduler = scheduler
+
+    train_loss_list = []
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -26,6 +29,7 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
             running_loss += loss.item() * inputs.size(0)
 
         epoch_loss = running_loss / len(train_loader.dataset)
+        train_loss_list.append(epoch_loss)
         print(f'Epoch {epoch+1}, Train Loss: {epoch_loss}')
 
         if scheduler is not None:
@@ -46,6 +50,21 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
 
             val_epoch_loss = val_running_loss / len(val_loader.dataset)
             print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss}')
+    
+    
+    fig = plt.figure()
+    plt.plot(train_loss_list)
+    
+    if scheduler is not None:
+        fig.suptitle(f'Loss when using {scheduler.__class__.__name__}')
+        plt.savefig(f'{scheduler.__class__.__name__}')
+    else:
+        if optimizer.__class__.__name__ == 'Adam':
+            fig.suptitle(f'Loss when using amsgrad')
+            plt.savefig(f'Amsgrad')
+        else:
+            fig.suptitle(f'Loss when using no scheduler')
+            plt.savefig(f'No_Scheduler')
 
 
 def test(model, device, test_loader):
