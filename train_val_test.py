@@ -1,16 +1,18 @@
 import torch
 
-def train_val(model, device, num_epochs, train_loader,val_loader, criterion, optimizer, scheduler=None):
+def train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler=None):
     torch.multiprocessing.freeze_support()
     model.to(device)
 
-    criterion = criterion
-    optimizer = optimizer
-    scheduler = scheduler
+    train_accuracies = []
+    val_accuracies = []
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
         running_loss = 0.0
+        correct = 0
+        total = 0
+
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
 
@@ -25,16 +27,25 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
             
             running_loss += loss.item() * inputs.size(0)
 
+            _, predicted = torch.max(outputs, 1)
+            total += targets.size(0)
+            correct += (predicted == targets).sum().item()
+
         epoch_loss = running_loss / len(train_loader.dataset)
-        print(f'Epoch {epoch+1}, Train Loss: {epoch_loss}')
+        train_accuracy = 100. * correct / total
+        train_accuracies.append(train_accuracy)
+        print(f'Epoch {epoch+1}, Train Loss: {epoch_loss}, Train Accuracy: {train_accuracy:.2f}%')
 
         if scheduler is not None:
             scheduler.step()
 
         # Validation phase
         model.eval()  # Set the model to evaluation mode
+        val_running_loss = 0.0
+        correct = 0
+        total = 0
+
         with torch.no_grad():
-            val_running_loss = 0.0
             for inputs, targets in val_loader:
                 inputs, targets = inputs.to(device), targets.to(device)
                 
@@ -44,12 +55,18 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
 
                 val_running_loss += loss.item() * inputs.size(0)
 
-            val_epoch_loss = val_running_loss / len(val_loader.dataset)
-            print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss}')
+                _, predicted = torch.max(outputs, 1)
+                total += targets.size(0)
+                correct += (predicted == targets).sum().item()
 
+            val_epoch_loss = val_running_loss / len(val_loader.dataset)
+            val_accuracy = 100. * correct / total
+            val_accuracies.append(val_accuracy)
+            print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss}, Validation Accuracy: {val_accuracy:.2f}%')
+
+    return train_accuracies, val_accuracies
 
 def test(model, device, test_loader):
-
     model.eval()
     correct = 0
     total = 0
@@ -62,4 +79,6 @@ def test(model, device, test_loader):
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
-    print(f'Accuracy of the network on the 10000 test images: {(100 * correct / total):.2f}%')
+    test_accuracy = 100 * correct / total
+    print(f'Accuracy of the network on the 10000 test images: {test_accuracy:.2f}%')
+    return test_accuracy

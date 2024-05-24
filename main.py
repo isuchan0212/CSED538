@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 import torch
 import torchvision.transforms as transforms
@@ -64,6 +65,23 @@ schedulers = {
 scheduler = schedulers[args.lr_scheduler] if args.lr_scheduler in schedulers else None
 
 if __name__ == '__main__':
-    train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler)
-    test(model, device, test_loader)
-    torch.save(model.state_dict(), 'model.pth')
+    train_accuracies, val_accuracies = train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler)
+    test_accuracy = test(model, device, test_loader)
+
+    epochs = range(1, num_epochs + 1)
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_accuracies, 'b', label='Train Accuracy')
+    plt.plot(epochs, val_accuracies, 'r', label='Validation Accuracy')
+    plt.title('Train and Validation Accuracy per Epoch')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    # torch.save(model.state_dict(), 'model.pth')
+
+#no : Accuracy of the network on the 10000 test images: 78.81%
+#step: Accuracy of the network on the 10000 test images: 73.40%
+#exp : Accuracy of the network on the 10000 test images: 78.36%
+#pol : Accuracy of the network on the 10000 test images: 74.88%
+#cos : Accuracy of the network on the 10000 test images: 76.35%
