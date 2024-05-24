@@ -57,14 +57,14 @@ def train_val(model, device, num_epochs, train_loader,val_loader, criterion, opt
     
     if scheduler is not None:
         fig.suptitle(f'Loss when using {scheduler.__class__.__name__}')
-        plt.savefig(f'{scheduler.__class__.__name__}')
+        plt.savefig(f'figures/{scheduler.__class__.__name__}')
     else:
         if optimizer.__class__.__name__ == 'Adam':
             fig.suptitle(f'Loss when using amsgrad')
-            plt.savefig(f'Amsgrad')
+            plt.savefig(f'figures/Amsgrad')
         else:
             fig.suptitle(f'Loss when using no scheduler')
-            plt.savefig(f'No_Scheduler')
+            plt.savefig(f'figures/No_Scheduler')
 
 
 def test(model, device, test_loader):
