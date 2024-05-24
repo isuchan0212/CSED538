@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from dataset import get_cifar10_dataset
-from train_val_test import train_val, test
+from train_val_test import train_val_test, final_test
 from mlp import MLP
 
 import argparse
@@ -50,18 +50,18 @@ test_loader = DataLoader(test_set, batch_size = 128, shuffle=False, num_workers=
 
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9) if not args.adaptive_scheduling else optim.Adam(model.parameters(), lr=0.1, amsgrad=True)
+optimizer = optim.SGD(model.parameters(), lr=0.1) if not args.adaptive_scheduling else optim.Adam(model.parameters(), lr=0.1, amsgrad=True)
 
 schedulers = {
-    'step': optim.lr_scheduler.StepLR(optimizer,50),
-    'exponential': optim.lr_scheduler.ExponentialLR(optimizer,0.998),
-    'polynomial': optim.lr_scheduler.PolynomialLR(optimizer, num_epochs),
-    'cosine': optim.lr_scheduler.CosineAnnealingLR(optimizer,50),
-    'cosinewarmup': optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer,50,T_mult=2) 
+    'step': optim.lr_scheduler.StepLR(optimizer, 20, gamma=0.5),
+    'exponential': optim.lr_scheduler.ExponentialLR(optimizer, 0.5),
+    'polynomial': optim.lr_scheduler.PolynomialLR(optimizer, 20, 0.5),
+    'cosine': optim.lr_scheduler.CosineAnnealingLR(optimizer, 20),
+    'cosinewarmup': optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 20) 
     }
 
 scheduler = schedulers[args.lr_scheduler] if args.lr_scheduler else None
 
 if __name__ == '__main__':
-    train_val(model, device, num_epochs, train_loader,val_loader, criterion, optimizer, scheduler)
-    test(model, device, test_loader)
+    train_val_test(model, device, num_epochs, train_loader, val_loader, test_loader, criterion, optimizer, scheduler)
+    final_test(model, device, test_loader)
