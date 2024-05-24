@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from dataset import get_cifar10_dataset
-from train_val_test import train_val_test, final_test
+from train_val_test import train_val_test
 from mlp import MLP
 
 import argparse
@@ -64,4 +64,3 @@ scheduler = schedulers[args.lr_scheduler] if args.lr_scheduler else None
 
 if __name__ == '__main__':
     train_val_test(model, device, num_epochs, train_loader, val_loader, test_loader, criterion, optimizer, scheduler)
-    final_test(model, device, test_loader)

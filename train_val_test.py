@@ -1,5 +1,43 @@
 import torch
 import matplotlib.pyplot as plt
+import csv
+
+def save_fig(msg, optimizer, scheduler, *args):
+
+    optimizer_name = optimizer.__class__.__name__
+    scheduler_name = scheduler.__class__.__name__
+
+    fig = plt.figure()
+    for arg in args:
+        plt.plot(arg)
+    
+    if scheduler is not None:
+        fig.suptitle(f'{msg} when using {scheduler_name}')
+        plt.savefig(f'figures/{msg}_{scheduler_name}')
+    else:
+        if optimizer_name == 'Adam':
+            fig.suptitle(f'{msg} when using amsgrad')
+            plt.savefig(f'figures/{msg}_Amsgrad')
+        else:
+            fig.suptitle(f'{msg} when using no scheduler')
+            plt.savefig(f'figures/{msg}_No_Scheduler')
+
+def csv_writing(optimizer, scheduler, logs):
+
+    optimizer_name = optimizer.__class__.__name__
+    scheduler_name = scheduler.__class__.__name__
+
+    if scheduler_name == 'NoneType':
+        if optimizer_name == 'Adam':
+            scheduler_name = 'Amsgrad'
+        else:
+            scheduler_name = 'No_Scheduler'
+
+    with open(f'csvs/{scheduler_name}_log.csv', 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=logs[0].keys())
+        writer.writeheader()
+        for log in logs:
+            writer.writerow(log)
 
 def train_val_test(model, device, num_epochs, train_loader,val_loader, test_loader, criterion, optimizer, scheduler=None):
     torch.multiprocessing.freeze_support()
@@ -15,6 +53,8 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
     train_acc_list = []
     val_acc_list = []
     test_acc_list = []
+
+    logs = []
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -85,53 +125,13 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
 
             print(f'Epoch {epoch+1}, Test Accuracy: {test_epoch_accuracy}')
 
+        logs.append({'epoch': epoch + 1, 
+                    'train_loss': epoch_loss, 'train_accuracy': epoch_accuracy,
+                    'val_loss': val_epoch_loss, 'val_accuracy': val_epoch_accuracy,
+                    'test_accuracy': test_epoch_accuracy})
 
     
-    fig = plt.figure()
-    plt.plot(train_loss_list)
-    plt.plot(val_loss_list)
+    save_fig('Loss', optimizer, scheduler, train_loss_list, val_loss_list)
+    save_fig('Accuracy', optimizer, scheduler, train_acc_list, val_acc_list, test_acc_list)
     
-    if scheduler is not None:
-        fig.suptitle(f'Loss when using {scheduler.__class__.__name__}')
-        plt.savefig(f'figures/Loss_{scheduler.__class__.__name__}')
-    else:
-        if optimizer.__class__.__name__ == 'Adam':
-            fig.suptitle(f'Loss when using amsgrad')
-            plt.savefig(f'figures/Loss_Amsgrad')
-        else:
-            fig.suptitle(f'Loss when using no scheduler')
-            plt.savefig(f'figures/Loss_No_Scheduler')
-
-    fig = plt.figure()
-    plt.plot(train_acc_list)
-    plt.plot(val_acc_list)
-    plt.plot(test_acc_list)
-
-    if scheduler is not None:
-        fig.suptitle(f'Accuracy when using {scheduler.__class__.__name__}')
-        plt.savefig(f'figures/Accuracy_{scheduler.__class__.__name__}')
-    else:
-        if optimizer.__class__.__name__ == 'Adam':
-            fig.suptitle(f'Loss when using amsgrad')
-            plt.savefig(f'figures/Accuracy_Amsgrad')
-        else:
-            fig.suptitle(f'Loss when using no scheduler')
-            plt.savefig(f'figures/Accuracy_No_Scheduler')
-    
-
-
-def final_test(model, device, test_loader):
-
-    model.eval()
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs, targets in test_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            total += targets.size(0)
-            correct += (predicted == targets).sum().item()
-
-    print(f'Accuracy of the network on the 10000 test images: {(100 * correct / total):.2f}%')
+    csv_writing(optimizer, scheduler, logs)
