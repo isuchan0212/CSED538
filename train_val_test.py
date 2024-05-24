@@ -35,7 +35,7 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
             optimizer.step()
             
             train_loss += loss.item() * inputs.size(0)
-            train_correct += (predicted == targets).sum().item() * inputs.size(0)
+            train_correct += (predicted == targets).sum().item() 
 
         epoch_loss = train_loss / len(train_loader.dataset)
         epoch_accuracy = train_correct / len(train_loader.dataset)
@@ -61,7 +61,7 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
                 loss = criterion(outputs, targets)
 
                 val_loss += loss.item() * inputs.size(0)
-                val_correct += (predicted == targets).sum().item() * inputs.size(0)
+                val_correct += (predicted == targets).sum().item() 
 
             val_epoch_loss = val_loss / len(val_loader.dataset)
             val_epoch_accuracy = val_correct / len(val_loader.dataset)
