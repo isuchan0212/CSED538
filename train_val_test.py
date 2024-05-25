@@ -1,3 +1,4 @@
+import csv
 import torch
 
 def train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler=None):
@@ -6,6 +7,8 @@ def train_val(model, device, num_epochs, train_loader, val_loader, criterion, op
 
     train_accuracies = []
     val_accuracies = []
+    logs = []  # To store logs
+    best_val_accuracy = 0.0  # Best validation accuracy to track improvement
 
     for epoch in range(num_epochs):
         model.train()  # Set the model to training mode
@@ -24,7 +27,7 @@ def train_val(model, device, num_epochs, train_loader, val_loader, criterion, op
 
             loss.backward()
             optimizer.step()
-            
+
             running_loss += loss.item() * inputs.size(0)
 
             _, predicted = torch.max(outputs, 1)
@@ -48,9 +51,9 @@ def train_val(model, device, num_epochs, train_loader, val_loader, criterion, op
         with torch.no_grad():
             for inputs, targets in val_loader:
                 inputs, targets = inputs.to(device), targets.to(device)
-                
+
                 outputs = model(inputs)
-                
+
                 loss = criterion(outputs, targets)
 
                 val_running_loss += loss.item() * inputs.size(0)
@@ -64,7 +67,21 @@ def train_val(model, device, num_epochs, train_loader, val_loader, criterion, op
             val_accuracies.append(val_accuracy)
             print(f'Epoch {epoch+1}, Validation Loss: {val_epoch_loss}, Validation Accuracy: {val_accuracy:.2f}%')
 
-    return train_accuracies, val_accuracies
+            # Save the model if the validation accuracy is the best we've seen so far.
+            if val_accuracy > best_val_accuracy:
+                best_val_accuracy = val_accuracy
+
+        # Log the results
+        logs.append({
+            'epoch': epoch + 1,
+            'train_loss': epoch_loss,
+            'train_accuracy': train_accuracy,
+            'val_loss': val_epoch_loss,
+            'val_accuracy': val_accuracy,
+            'test_accuracy': None  # Placeholder, will be updated after test phase
+        })
+
+    return train_accuracies, val_accuracies, logs
 
 def test(model, device, test_loader):
     model.eval()
@@ -73,7 +90,7 @@ def test(model, device, test_loader):
     with torch.no_grad():
         for inputs, targets in test_loader:
             inputs, targets = inputs.to(device), targets.to(device)
-            
+
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             total += targets.size(0)

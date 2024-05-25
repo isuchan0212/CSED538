@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import csv
 
 import torch
 import torchvision.transforms as transforms
@@ -16,11 +17,9 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--lr_scheduler', default=None, help='Select learning rate scheduler (step, exponential, polynomial, cosine, cosinewarmup)')
-parser.add_argument('-a', '--adaptive_scheduling', action='store_true', help='Use adaptive optimizer')
-
 args = parser.parse_args()
 
-random_seed = 42 
+random_seed = 42
 
 generator = torch.Generator().manual_seed(random_seed)
 torch.manual_seed(random_seed)
@@ -53,20 +52,40 @@ val_loader = DataLoader(val_set, batch_size=128, shuffle=False, num_workers=4, p
 test_loader = DataLoader(test_set, batch_size=128, shuffle=False, num_workers=4, pin_memory=True)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.9) if not args.adaptive_scheduling else optim.Adam(model.parameters(), lr=1e-3, amsgrad=True)
 
-schedulers = {
-    'step': optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1),
-    'exponential': optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.998),
-    'polynomial': optim.lr_scheduler.PolynomialLR(optimizer, total_iters=num_epochs, power=2),
-    'cosine': optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50),
-    'cosinewarmup': optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2) 
-}
-scheduler = schedulers[args.lr_scheduler] if args.lr_scheduler in schedulers else None
+if args.lr_scheduler == 'step':
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
+elif args.lr_scheduler == 'exponential':
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.5)
+elif args.lr_scheduler == 'polynomial':
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.PolynomialLR(optimizer, total_iters=num_epochs, power=2)
+elif args.lr_scheduler == 'cosine':
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
+elif args.lr_scheduler == 'cosinewarmup':
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=20)
+else:
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    scheduler = None
 
 if __name__ == '__main__':
-    train_accuracies, val_accuracies = train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler)
+    train_accuracies, val_accuracies, logs = train_val(model, device, num_epochs, train_loader, val_loader, criterion, optimizer, scheduler)
     test_accuracy = test(model, device, test_loader)
+
+    # Update test accuracy in logs
+    for log in logs:
+        log['test_accuracy'] = test_accuracy
+
+    # Save logs to CSV
+    keys = logs[0].keys()
+    with open('training_logs.csv', 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, fieldnames=keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(logs)
 
     epochs = range(1, num_epochs + 1)
     plt.figure(figsize=(10, 5))
@@ -78,10 +97,5 @@ if __name__ == '__main__':
     plt.legend()
     plt.grid(True)
     plt.show()
-    # torch.save(model.state_dict(), 'model.pth')
 
-#no : Accuracy of the network on the 10000 test images: 78.81%
-#step: Accuracy of the network on the 10000 test images: 73.40%
-#exp : Accuracy of the network on the 10000 test images: 78.36%
-#pol : Accuracy of the network on the 10000 test images: 74.88%
-#cos : Accuracy of the network on the 10000 test images: 76.35%
+#NONE : Accuracy of the network on the 10000 test images: 78.64%
