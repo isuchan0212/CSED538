@@ -1,15 +1,21 @@
 import torch
 import matplotlib.pyplot as plt
 import csv
+import optuna
 
 def save_fig(msg, optimizer, scheduler, *args):
 
     optimizer_name = optimizer.__class__.__name__
     scheduler_name = scheduler.__class__.__name__
+    if len(args) == 2:
+        stages = ['train','valid']
+    else:
+        stages = ['train','valid','test']
 
     fig = plt.figure()
-    for arg in args:
-        plt.plot(arg)
+    for stage, arg in zip(stages,args):
+        plt.plot(arg, label=stage)
+    plt.legend()
     
     if scheduler is not None:
         fig.suptitle(f'{msg} when using {scheduler_name}')
@@ -38,6 +44,7 @@ def csv_writing(optimizer, scheduler, logs):
         writer.writeheader()
         for log in logs:
             writer.writerow(log)
+
 
 def train_val_test(model, device, num_epochs, train_loader,val_loader, test_loader, criterion, optimizer, scheduler=None):
     torch.multiprocessing.freeze_support()
@@ -84,9 +91,6 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
         print(f'Epoch {epoch+1}, Train Loss: {epoch_loss}')
         print(f'Epoch {epoch+1}, Train Accuracy: {epoch_accuracy}')
 
-        if scheduler is not None:
-            scheduler.step()
-
         # Validation phase
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():
@@ -124,6 +128,9 @@ def train_val_test(model, device, num_epochs, train_loader,val_loader, test_load
             test_acc_list.append(test_epoch_accuracy)
 
             print(f'Epoch {epoch+1}, Test Accuracy: {test_epoch_accuracy}')
+
+        if scheduler is not None:
+            scheduler.step()
 
         logs.append({'epoch': epoch + 1, 
                     'train_loss': epoch_loss, 'train_accuracy': epoch_accuracy,
