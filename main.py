@@ -54,6 +54,7 @@ if __name__ == '__main__':
     optimizer = optim.SGD(model.parameters(), lr=0.1) 
 
     schedulers = {
+        'linear': optim.lr_scheduler.LambdaLR(optimizer, lambda epoch: 1 - epoch / num_epochs),
         'step': optim.lr_scheduler.StepLR(optimizer, 26, gamma=0.811),
         'exponential': optim.lr_scheduler.ExponentialLR(optimizer, 0.859),
         'polynomial': optim.lr_scheduler.PolynomialLR(optimizer, 48, 2),
