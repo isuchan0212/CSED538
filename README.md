@@ -6,6 +6,12 @@
 - Epoch 200, Validation Loss: 5.4698018615722654
 - Epoch 200, Validation Accuracy: 0.5457
 - Epoch 200, Test Accuracy: 0.5405
+### LambdaLR
+- Epoch 200, Train Loss: 0.001337097291648388
+- Epoch 200, Train Accuracy: 1.0
+- Epoch 200, Validation Loss: 4.416814225769043
+- Epoch 200, Validation Accuracy: 0.5411
+- Epoch 200, Test Accuracy: 0.5439
 ### StepLR
 - Epoch 200, Train Loss: 0.0009980126913636924
 - Epoch 200, Train Accuracy: 1.0
